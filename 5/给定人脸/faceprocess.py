@@ -1,0 +1,106 @@
+'''
+Numpy library: Provides a way to handle matrices 
+Linaig module: used to calculate eigenvalues and eigenvectors
+opencv2.0: graphics library
+'''
+
+from numpy import *
+from numpy import linalg as la
+import cv2 as cv
+
+'''
+ function: img2vector
+ usage: temp_array = img2vector(temp_img)
+ This function calls the reshape function 
+ in numpy to reduce the two-dimensional matrix
+ to a one-dimensional vector
+'''
+
+
+def img2vector(img):
+
+    rows, cols = img.shape
+    imgVector = zeros((1,rows*cols)) 
+    imgVector = reshape(img,(1,rows*cols))
+    return imgVector
+
+'''
+ function: average
+ usage: array_average = average(array1)
+ Calculate the integer mean value 
+ of the row vector of the matrix
+'''
+
+def average(array):
+    return mean(array,0,int)
+
+'''
+ function: refine
+ usage: array_refine - refine(array_average, array1)
+ Calculate the mean face
+'''
+
+def refine(array_average, array1):
+    refine1 = []
+    for member in array1:
+        temp_refine = subtract(member, array_average)
+        refine1.append(temp_refine)
+    return refine1
+
+####################### global scope #######################
+
+# read image
+
+static_shape = cv.imread("face1.jpg",0).shape
+
+# The 36 images to be processed are dimensionally reduced
+
+array1 = []
+for i in range(0, 36):
+    temp_img = cv.imread("face" + str(i + 1) + ".jpg",0) 
+    # Since the image sizes are not the same, 
+    # resize all the images against the size of the first image
+    temp_img = cv.resize(temp_img,static_shape)
+    temp_array = img2vector(temp_img)
+    array1.append(temp_array[0])
+
+# Find the updated matrix
+
+array_average = average(array1)
+array_refine = refine(array_average, array1)
+
+# Matrix transpose
+array_refine = array(array_refine)
+array_tran = array_refine.T
+
+# Dot matrix multiplication
+
+array_multi = dot(array_refine, array_tran)
+
+# calculate eigenvalues and eigenvectors
+
+u,v= linalg.eig(array_multi)
+
+# Using eigenvector and original matrix to calculate characteristic face
+
+result1 = []
+for i in range(0, 6):
+    temp_m = dot(array_tran, v[i])
+    result1.append(temp_m)
+
+# Change the data type to int
+
+for i in range(0, 6):
+    for j in range(0, static_shape[1] * static_shape[0]):
+        result1[i][j] = int(result1[i][j])
+
+# Reshape the two-dimensional matrix and save it as a picture
+
+for i in range(0, 6):
+    temp_r = reshape(result1[i],static_shape)
+    cv.imwrite("result"+str(i)+".jpg", temp_r)
+
+
+
+
+
